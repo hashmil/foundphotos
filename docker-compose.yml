@@ -7,12 +7,15 @@ services:
       dockerfile: Dockerfile
       target: backend
     ports:
-      - 3000:3000
+      - "3000:3000"
     environment:
-      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_URI=mongodb://root:rootpassword@mongo:27017/foundphotos?authSource=admin
       - FAL_KEY=${FAL_KEY}
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
+    networks:
+      - app-network
 
   frontend:
     build:
@@ -20,9 +23,11 @@ services:
       dockerfile: Dockerfile
       target: frontend
     ports:
-      - 8080:8080
+      - "8080:8080"
     depends_on:
       - backend
+    networks:
+      - app-network
 
   mongo:
     image: mongo
@@ -31,6 +36,18 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks:
+      - app-network
 
 volumes:
   mongo-data:
+
+networks:
+  app-network:
+    driver: bridge

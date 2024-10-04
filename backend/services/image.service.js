@@ -1,34 +1,51 @@
-const { fal } = require("@fal-ai/serverless-client");
-const Image = require("../models/image.model");
-
-async function generateImages() {
+const generateImage = async () => {
   try {
-    const response = await fal.generateImage({
-      prompt: "A beautiful landscape with mountains and a lake",
-      seed: Math.floor(Math.random() * 1000),
-      width: 512,
-      height: 512,
-      enable_safety_checker: true,
+    console.log("Starting image generation...");
+    console.log("FAL API Key:", process.env.FAL_KEY ? "Set" : "Not set");
+
+    const result = await fal.subscribe("fal-ai/flux-pro/v1.1", {
+      input: {
+        prompt: "IMG_1081.HEIC",
+        image_size: "square_hd",
+      },
+      logs: true,
+      onQueueUpdate: (update) => {
+        console.log("Queue update:", JSON.stringify(update, null, 2));
+        if (update.status === "IN_PROGRESS") {
+          update.logs.map((log) => log.message).forEach(console.log);
+        }
+      },
     });
 
-    const { url, width, height, contentType } = response.data;
+    console.log(
+      "Image generation completed. Result:",
+      JSON.stringify(result, null, 2)
+    );
 
-    const image = new Image({
-      url,
-      width,
-      height,
-      contentType,
-      createdAt: new Date(),
-      prompt: "A beautiful landscape with mountains and a lake",
-      seed: response.data.seed,
-      hasNSFWContent: response.data.has_nsfw_content,
+    if (!result.images || result.images.length === 0) {
+      throw new Error("No image generated");
+    }
+
+    const newImage = new Image({
+      url: result.images[0].url,
+      prompt: "IMG_1081.HEICe",
     });
 
-    await image.save();
-    console.log("Image saved to database:", image);
+    await newImage.save();
+    console.log(
+      "New image saved to database:",
+      JSON.stringify(newImage, null, 2)
+    );
+    return newImage;
   } catch (error) {
     console.error("Error generating image:", error);
+    console.error("Error details:", error.message);
+    if (error.response) {
+      console.error(
+        "Error response:",
+        JSON.stringify(error.response.data, null, 2)
+      );
+    }
+    throw error;
   }
-}
-
-module.exports = { generateImages };
+};

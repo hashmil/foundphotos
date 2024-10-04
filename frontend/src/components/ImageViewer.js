@@ -1,39 +1,39 @@
-import React, { useState } from "react";
-import { useHistory, useParams } from "react-router-dom";
+import React from "react";
 
-const ImageViewer = ({ images }) => {
-  const { id } = useParams();
-  const history = useHistory();
-  const currentIndex = images.findIndex((image) => image._id === id);
+const ImageViewer = ({ images, currentImage, onClose, onNavigate }) => {
+  const currentIndex = images.findIndex((img) => img._id === currentImage._id);
 
   const handlePrevious = () => {
     const prevIndex = currentIndex === 0 ? images.length - 1 : currentIndex - 1;
-    history.push(`/image/${images[prevIndex]._id}`);
+    onNavigate(images[prevIndex]);
   };
 
   const handleNext = () => {
     const nextIndex = currentIndex === images.length - 1 ? 0 : currentIndex + 1;
-    history.push(`/image/${images[nextIndex]._id}`);
+    onNavigate(images[nextIndex]);
   };
 
-  if (currentIndex === -1) {
-    return <div>Image not found.</div>;
-  }
-
   return (
-    <div className="fixed top-0 left-0 w-full h-full bg-black flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
       <button
-        className="absolute top-4 left-4 text-white text-3xl hover:text-gray-400"
+        className="absolute right-4 top-4 text-white text-3xl hover:text-gray-400"
+        onClick={onClose}>
+        &times;
+      </button>
+      <button
+        className="absolute left-4 top-1/2 text-white text-3xl hover:text-gray-400"
         onClick={handlePrevious}>
         &lt;
       </button>
-      <img
-        src={images[currentIndex].url}
-        alt={images[currentIndex].prompt}
-        className="max-w-full max-h-full object-contain"
-      />
+      <div className="relative aspect-[3/4] w-full max-h-[75vh]">
+        <img
+          src={currentImage.url}
+          alt={currentImage.prompt}
+          className="object-contain max-w-full max-h-full"
+        />
+      </div>
       <button
-        className="absolute top-4 right-4 text-white text-3xl hover:text-gray-400"
+        className="absolute right-4 top-1/2 text-white text-3xl hover:text-gray-400"
         onClick={handleNext}>
         &gt;
       </button>
